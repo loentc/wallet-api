@@ -6,13 +6,13 @@
 # Run the container with `docker run -p 3000:3000 -t wallet-api`.
 FROM docker.io/node:lts-alpine
 
-ENV HOST=0.0.0.0
+ENV HOST=127.0.0.1
 ENV PORT=3000
 
 WORKDIR /app
 
 RUN addgroup --system wallet-api && \
-          adduser --system -G wallet-api wallet-api
+    adduser --system -G wallet-api wallet-api
 
 COPY dist/wallet-api wallet-api
 RUN chown -R wallet-api:wallet-api .
@@ -21,4 +21,5 @@ RUN chown -R wallet-api:wallet-api .
 # The bundled output will include external dependencies.
 RUN npm --prefix wallet-api --omit=dev -f install
 
+EXPOSE 3000
 CMD [ "node", "wallet-api" ]
