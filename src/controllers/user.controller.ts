@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { UserService } from "../services/user.service";
 import { injectable } from "tsyringe";
 
-
 @injectable()
 export class UserController {
     // eslint-disable-next-line @typescript-eslint/no-empty-function

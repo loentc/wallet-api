@@ -1,9 +1,11 @@
 import "reflect-metadata";
 import express from 'express';
 import UserRouter from './routes/user.route';
+import WalletRouter from "./routes/wallet.route";
 import { createTables } from './common/database';
 import { createServer } from "http";
 import dotenv from 'dotenv';
+import UserBalanceRouter from "./routes/user-balance.route";
 dotenv.config()
 
 const host = process.env.HOST ?? 'localhost';
@@ -21,4 +23,6 @@ createServer(app,).listen(port, host, (() => {
 }))
 createTables()
 
-app.use(UserRouter)
+app.use('/user', UserRouter)
+app.use('/wallet', WalletRouter)
+app.use('/user-balance', UserBalanceRouter)

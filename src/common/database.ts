@@ -1,6 +1,7 @@
 import { DataTypes, Model, Sequelize } from 'sequelize';
 import { PostgresConfigModuleOption } from '../config/postgres';
 import bcrypt from 'bcrypt'
+import { UserRole } from '../config/role';
 
 export const SequelizeModule = new Sequelize(PostgresConfigModuleOption);
 
@@ -11,7 +12,7 @@ export class User extends Model {
     declare email: string;
     declare username: string;
     declare password: string;
-
+    declare role: UserRole
 }
 User.init(
     {
@@ -39,44 +40,117 @@ User.init(
             type: DataTypes.STRING,
             allowNull: false,
         },
+        role: {
+            type: DataTypes.STRING,
+            allowNull: false,
+            defaultValue: UserRole.USER
+        },
     },
     {
         sequelize: SequelizeModule,
         modelName: 'user',
         tableName: 'user',
-        timestamps: true,
     }
 );
 
-export class Token extends Model {
-    declare id: number;
-    declare userId: number;
-    declare token: string;
-
+export class UserBalance extends Model {
+    declare id: string
+    declare user_id: string;
+    declare currency_name: string
+    declare balance: number
 }
-Token.init(
+UserBalance.init(
     {
         id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
+            type: DataTypes.STRING,
             primaryKey: true,
         },
-        userId: {
-            type: DataTypes.INTEGER,
+        user_id: {
+            type: DataTypes.STRING,
             allowNull: false,
         },
-        token: {
+        currency_name: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        balance: {
+            type: DataTypes.DECIMAL,
+            allowNull: false,
+        }
+    },
+    {
+        sequelize: SequelizeModule,
+        modelName: 'user_balance',
+        tableName: 'user_balance',
+    }
+);
+
+export class ExchangeRate extends Model {
+    declare id: number;
+    declare source_currency: string;
+    declare target_currency: string
+    declare rate: number
+}
+ExchangeRate.init(
+    {
+        id: {
+            type: DataTypes.STRING,
+            primaryKey: true,
+        },
+        source_currency: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        target_currency: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        rate: {
+            type: DataTypes.DECIMAL,
+            allowNull: false,
+        }
+    },
+    {
+        sequelize: SequelizeModule,
+        modelName: 'exchange_rate',
+        tableName: 'exchange_rate',
+    }
+);
+
+export class Cryptocurrency extends Model {
+    declare symbol: string;
+    declare currency_name: string
+}
+Cryptocurrency.init(
+    {
+        currency_name: {
+            type: DataTypes.STRING,
+            primaryKey: true,
+        },
+        symbol: {
             type: DataTypes.STRING,
             allowNull: false,
         },
     },
     {
         sequelize: SequelizeModule,
-        modelName: 'token',
-        tableName: 'token',
-        timestamps: false,
+        modelName: 'cryptocurrency',
+        tableName: 'cryptocurrency',
     }
 );
+
+User.hasMany(UserBalance, { foreignKey: 'user_id' })
+UserBalance.belongsTo(User, { foreignKey: 'user_id', targetKey: 'id', constraints: false })
+
+UserBalance.belongsTo(Cryptocurrency, { foreignKey: 'currency_name' })
+Cryptocurrency.hasMany(UserBalance, { foreignKey: 'currency_name' })
+
+Cryptocurrency.hasMany(ExchangeRate, { foreignKey: 'source_currency' });
+Cryptocurrency.hasMany(ExchangeRate, { foreignKey: 'target_currency' });
+
+ExchangeRate.belongsTo(Cryptocurrency, { foreignKey: 'source_currency', targetKey: 'currency_name', constraints: false });
+ExchangeRate.belongsTo(Cryptocurrency, { foreignKey: 'target_currency', targetKey: 'currency_name', constraints: false });
+
 
 User.beforeCreate(async (user) => {
     const salt = await bcrypt.genSalt(10);
@@ -84,10 +158,9 @@ User.beforeCreate(async (user) => {
     user.password = hashedPassword;
 });
 
-
 export async function createTables() {
     try {
-        await SequelizeModule.sync({ force: true }).then(() => {
+        await SequelizeModule.sync({ alter: true }).then(() => {
             console.log('Database synchronized');
         })
             .catch((error) => {

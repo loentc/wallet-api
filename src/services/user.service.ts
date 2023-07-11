@@ -12,11 +12,30 @@ export class UserService {
     async create(req: Request) {
         try {
             await User.create({ id: uuidv4(), ...req.body })
-            return 'Create Successful'
+            return 'Create user successful'
         }
         catch (error) {
             return error
         }
+    }
 
+    async getOne(userId: string) {
+        try {
+            const userData = await User.findOne({ where: { id: userId } })
+            return userData.dataValues
+        }
+        catch (error) {
+            return error
+        }
+    }
+
+    async getAll() {
+        try {
+            const userData = await User.findAll()
+            return userData
+        }
+        catch (error) {
+            return error
+        }
     }
 }
